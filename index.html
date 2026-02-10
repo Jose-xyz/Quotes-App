@@ -52,7 +52,13 @@
                 };
             } catch (err) {
                 console.error("Fetch failed", err);
-                if (!cache) return; 
+                if (!cache) {
+                    {
+                     document.getElementById('quote-text').innerText = "Focus on the journey, not the destination.";
+                     document.getElementById('quote-author').innerText = "- Greg Anderson";
+                    return;
+                    }
+                }
             }
         }
 
