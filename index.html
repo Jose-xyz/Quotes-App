@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quote Cache Pro</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #1a1a1a; color: #eee; margin: 0; }
+        #card { background: #2a2a2a; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; }
+        h2 { font-size: 1.5rem; margin-bottom: 10px; line-height: 1.4; }
+        p { color: #aaa; font-style: italic; margin-bottom: 25px; }
+        .controls { display: flex; gap: 10px; justify-content: center; }
+        button { background: #444; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        button:hover { background: #666; }
+        button.primary { background: #3498db; }
+        button.primary:hover { background: #2980b9; }
+        #status { display: block; margin-top: 15px; font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+<div id="card">
+    <h2 id="quote-text">Loading...</h2>
+    <p id="quote-author"></p>
+    
+    <div class="controls">
+        <button class="primary" onclick="cycleQuote()">Next Quote</button>
+        <button onclick="copyToClipboard()">Copy</button>
+    </div>
+    
+    <span id="status">Checking cache...</span>
+</div>
+
+<script>
+   // const PROXY = "https://corsproxy.io/?";
+    const API_URL = "https://zenquotes.io/api/quotes/";
+    const EXPIRY_TIME = 2 * 60 * 60 * 1000; 
+
+    async function cycleQuote() {
+        const now = new Date().getTime();
+        let cache = JSON.parse(localStorage.getItem('quoteCache'));
+
+        // 1. Fetch logic: If no cache or cache is expired (2 hours)
+        if (!cache || (now - cache.lastFetched) > EXPIRY_TIME) {
+            document.getElementById('status').innerText = "Fetching fresh batch...";
+            try {
+                //const response = await fetch(PROXY + API_URL);
+                const response = await fetch(API_URL);
+                const newData = await response.json();
+                cache = {
+                    quotes: newData,
+                    currentIndex: 0,
+                    lastFetched: now
+                };
+            } catch (err) {
+                console.error("Fetch failed", err);
+                if (!cache) return; 
+            }
+        }
+
+        // 2. Display logic
+        const current = cache.quotes[cache.currentIndex];
+        document.getElementById('quote-text').innerText = `"${current.q}"`;
+        document.getElementById('quote-author').innerText = `- ${current.a}`;
+        document.getElementById('status').innerText = `Cached: ${new Date(cache.lastFetched).toLocaleTimeString()}`;
+
+        // 3. Increment & Save
+        cache.currentIndex = (cache.currentIndex + 1) % cache.quotes.length;
+        localStorage.setItem('quoteCache', JSON.stringify(cache));
+    }
+
+    function copyToClipboard() {
+        const text = document.getElementById('quote-text').innerText;
+        const author = document.getElementById('quote-author').innerText;
+        const fullQuote = `${text} ${author}`;
+        
+        navigator.clipboard.writeText(fullQuote).then(() => {
+            alert("Quote copied to clipboard!");
+        });
+    }
+
+    // Initialize on load
+    cycleQuote();
+</script>
+
+</body>
+</html>

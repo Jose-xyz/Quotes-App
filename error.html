@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Error</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background: #1a1a1a; 
+            color: #eee; 
+            margin: 0; 
+        }
+        .error-container { 
+            text-align: center; 
+            padding: 40px; 
+            background: #2a2a2a; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 400px;
+        }
+        .icon { font-size: 3rem; margin-bottom: 1rem; }
+        h1 { font-size: 1.5rem; color: #e74c3c; }
+        p { color: #aaa; line-height: 1.6; }
+        .btn-retry { 
+            display: inline-block;
+            margin-top: 20px;
+            background: #3498db; 
+            color: white; 
+            text-decoration: none; 
+            padding: 10px 25px; 
+            border-radius: 5px; 
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-retry:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+
+<div class="error-container">
+    <div class="icon">📡</div>
+    <h1>Connection Issue</h1>
+    <p>We couldn't fetch your daily dose of wisdom. This usually happens due to a CORS block or a lost internet connection.</p>
+    <a href="index.html" class="btn-retry">Try Again</a>
+</div>
+
+</body>
+</html>
