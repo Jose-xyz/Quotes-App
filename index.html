@@ -31,7 +31,7 @@
 </div>
 
 <script>
-   // const PROXY = "https://corsproxy.io/?";
+    const PROXY = "https://corsproxy.io/?";
     const API_URL = "https://zenquotes.io/api/quotes/";
     const EXPIRY_TIME = 2 * 60 * 60 * 1000; 
 
@@ -43,8 +43,7 @@
         if (!cache || (now - cache.lastFetched) > EXPIRY_TIME) {
             document.getElementById('status').innerText = "Fetching fresh batch...";
             try {
-                //const response = await fetch(PROXY + API_URL);
-                const response = await fetch(API_URL);
+                const response = await fetch(PROXY + API_URL);
                 const newData = await response.json();
                 cache = {
                     quotes: newData,
