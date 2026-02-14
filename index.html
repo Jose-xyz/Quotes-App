@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="data:,"> <title>Quote Cache Pro</title>
+    <link rel="icon" href="data:,">
+    <title>Quote Cache Pro</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #1a1a1a; color: #eee; margin: 0; }
         #card { background: #2a2a2a; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; }
@@ -27,56 +28,74 @@
     </div>
     <span id="status">Checking cache...</span>
 </div>
+
 <script>
-async function cycleQuote() {
-    const now = new Date().getTime();
-    let cache = JSON.parse(localStorage.getItem('quoteCache'));
+    // Configuration
+    const LAMBDA_ENDPOINT = "https://teh3ukzwxorscb6kbafs2i3unu0mvhms.lambda-url.us-east-2.on.aws/";
+    const EXPIRY_TIME = 2 * 60 * 60 * 1000; // 2 hours
 
-    if (!cache || (now - cache.lastFetched) > EXPIRY_TIME) {
-        document.getElementById('status').innerText = "Syncing with AWS...";
-        try {
-            const response = await fetch(LAMBDA_ENDPOINT);
-            let newData = await response.json();
-            
-            // --- DATA CLEANER STEP ---
-            // If Lambda nests the data (common in some AWS setups), 
-            // we grab the array wherever it is.
-            const quotesArray = Array.isArray(newData) ? newData : (newData.quotes || newData.body || []);
+    async function cycleQuote() {
+        const now = new Date().getTime();
+        let cache = JSON.parse(localStorage.getItem('quoteCache'));
 
-            if (quotesArray.length === 0) throw new Error("No quotes found in response");
+        // 1. Fetch logic
+        if (!cache || (now - cache.lastFetched) > EXPIRY_TIME) {
+            document.getElementById('status').innerText = "Syncing with AWS...";
+            try {
+                const response = await fetch(LAMBDA_ENDPOINT);
+                const newData = await response.json();
+                
+                // Ensure we actually got an array of quotes
+                const quotesArray = Array.isArray(newData) ? newData : [];
 
-            cache = {
-                quotes: quotesArray,
-                currentIndex: 0,
-                lastFetched: now
-            };
-        } catch (err) {
-            console.error("Fetch failed:", err);
-            document.getElementById('status').innerText = "Using backup quote";
-            if (!cache) {
-                document.getElementById('quote-text').innerText = "Keep moving forward.";
-                document.getElementById('quote-author').innerText = "- Walt Disney";
-                return;
+                if (quotesArray.length === 0) throw new Error("Empty data");
+
+                cache = {
+                    quotes: quotesArray,
+                    currentIndex: 0,
+                    lastFetched: now
+                };
+            } catch (err) {
+                console.error("Fetch failed:", err);
+                document.getElementById('status').innerText = "Offline Mode";
+                if (!cache) {
+                    document.getElementById('quote-text').innerText = "Keep moving forward.";
+                    document.getElementById('quote-author').innerText = "- Walt Disney";
+                    return;
+                }
             }
+        }
+
+        // 2. Display logic
+        const current = cache.quotes[cache.currentIndex];
+        
+        // Safety check for the 'undefined' error
+        if (current && current.q) {
+            document.getElementById('quote-text').innerText = `"${current.q}"`;
+            document.getElementById('quote-author').innerText = `- ${current.a || "Unknown"}`;
+            document.getElementById('status').innerText = `Last Sync: ${new Date(cache.lastFetched).toLocaleTimeString()}`;
+
+            // 3. Save progress
+            cache.currentIndex = (cache.currentIndex + 1) % cache.quotes.length;
+            localStorage.setItem('quoteCache', JSON.stringify(cache));
+        } else {
+            // If data is corrupted, wipe it so the next click tries a fresh fetch
+            localStorage.removeItem('quoteCache');
+            document.getElementById('quote-text').innerText = "Data error. Please click Next again.";
         }
     }
 
-    // Double check that 'current' exists before displaying
-    const current = cache.quotes[cache.currentIndex];
-    
-    if (current && current.q) {
-        document.getElementById('quote-text').innerText = `"${current.q}"`;
-        document.getElementById('quote-author').innerText = `- ${current.a || "Unknown"}`;
-        document.getElementById('status').innerText = `Last Sync: ${new Date(cache.lastFetched).toLocaleTimeString()}`;
-        
-        cache.currentIndex = (cache.currentIndex + 1) % cache.quotes.length;
-        localStorage.setItem('quoteCache', JSON.stringify(cache));
-    } else {
-        // If data is still weird, clear cache to try again
-        localStorage.removeItem('quoteCache');
-        document.getElementById('status').innerText = "Error: Bad data format. Retrying...";
+    function copyToClipboard() {
+        const text = document.getElementById('quote-text').innerText;
+        const author = document.getElementById('quote-author').innerText;
+        navigator.clipboard.writeText(`${text} ${author}`).then(() => {
+            alert("Quote copied to clipboard!");
+        });
     }
-}
+
+    // Initialize
+    cycleQuote();
 </script>
+
 </body>
 </html>
