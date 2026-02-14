@@ -31,44 +31,43 @@
 </div>
 
 <script>
-    const PROXY = "https://corsproxy.io/?";
-    const API_URL = "https://zenquotes.io/api/quotes/";
+    // Replace this with your actual Lambda Function URL or API Gateway URL
+    const LAMBDA_ENDPOINT = "https://your-unique-lambda-id.lambda-url.us-east-1.on.aws/";
     const EXPIRY_TIME = 2 * 60 * 60 * 1000; 
 
     async function cycleQuote() {
         const now = new Date().getTime();
         let cache = JSON.parse(localStorage.getItem('quoteCache'));
 
-        // 1. Fetch logic: If no cache or cache is expired (2 hours)
+        // 1. Fetch logic: Use Lambda instead of CORS proxy
         if (!cache || (now - cache.lastFetched) > EXPIRY_TIME) {
-            document.getElementById('status').innerText = "Fetching fresh batch...";
+            document.getElementById('status').innerText = "Fetching from AWS Lambda...";
             try {
-                const response = await fetch(PROXY + API_URL);
+                const response = await fetch(LAMBDA_ENDPOINT);
                 const newData = await response.json();
+                
                 cache = {
                     quotes: newData,
                     currentIndex: 0,
                     lastFetched: now
                 };
             } catch (err) {
-                console.error("Fetch failed", err);
+                console.error("Lambda Fetch failed", err);
                 if (!cache) {
-                    {
-                     document.getElementById('quote-text').innerText = "Focus on the journey, not the destination.";
-                     document.getElementById('quote-author').innerText = "- Greg Anderson";
+                    document.getElementById('quote-text').innerText = "Focus on the journey, not the destination.";
+                    document.getElementById('quote-author').innerText = "- Greg Anderson";
                     return;
-                    }
                 }
             }
         }
 
-        // 2. Display logic
+        // 2. Display logic (Same as before)
         const current = cache.quotes[cache.currentIndex];
         document.getElementById('quote-text').innerText = `"${current.q}"`;
         document.getElementById('quote-author').innerText = `- ${current.a}`;
-        document.getElementById('status').innerText = `Cached: ${new Date(cache.lastFetched).toLocaleTimeString()}`;
+        document.getElementById('status').innerText = `Last Sync: ${new Date(cache.lastFetched).toLocaleTimeString()}`;
 
-        // 3. Increment & Save
+        // 3. Save progress
         cache.currentIndex = (cache.currentIndex + 1) % cache.quotes.length;
         localStorage.setItem('quoteCache', JSON.stringify(cache));
     }
@@ -76,14 +75,11 @@
     function copyToClipboard() {
         const text = document.getElementById('quote-text').innerText;
         const author = document.getElementById('quote-author').innerText;
-        const fullQuote = `${text} ${author}`;
-        
-        navigator.clipboard.writeText(fullQuote).then(() => {
-            alert("Quote copied to clipboard!");
+        navigator.clipboard.writeText(`${text} ${author}`).then(() => {
+            alert("Quote copied!");
         });
     }
 
-    // Initialize on load
     cycleQuote();
 </script>
 
