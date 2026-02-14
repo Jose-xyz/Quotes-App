@@ -1,37 +1,35 @@
 export const handler = async (event) => {
-    // These headers tell the browser "I allow this request"
-    const headers = {
+    // 1. Manually define the headers
+    const responseHeaders = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Content-Type": "application/json"
     };
 
-    // 1. Handle OPTIONS (Pre-flight) request
+    // 2. Handle the Preflight (OPTIONS) request from the browser
     if (event.requestContext && event.requestContext.http && event.requestContext.http.method === 'OPTIONS') {
         return {
             statusCode: 200,
-            headers: headers,
+            headers: responseHeaders,
             body: ''
         };
     }
 
     try {
-        // 2. Fetch the quotes
         const response = await fetch("https://zenquotes.io/api/quotes/");
         const data = await response.json();
 
-        // 3. Return the data WITH the headers
         return {
             statusCode: 200,
-            headers: headers,
+            headers: responseHeaders, // <--- This is the magic part
             body: JSON.stringify(data),
         };
     } catch (error) {
-        console.error(error);
         return {
             statusCode: 500,
-            headers: headers,
-            body: JSON.stringify({ message: "Internal Server Error", error: error.message }),
+            headers: responseHeaders,
+            body: JSON.stringify({ error: "Failed to fetch quotes", details: error.message }),
         };
     }
 };
