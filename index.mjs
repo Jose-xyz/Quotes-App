@@ -32,4 +32,4 @@ export const handler = async (event) => {
             body: JSON.stringify({ error: "Failed to fetch quotes", details: error.message }),
         };
     }
-};
+}; 
